@@ -119,10 +119,18 @@ demo 7 = putStrLn (fansOfDirAsStr (fansOfADirector "James Cameron" testDatabase)
 -- User Interface
 
 main :: IO ()
-main = putStrLn ("Main locked and ready" ++ "\n")
+main = do
+    putStrLn ("Main loaded..." ++ "\n" ++ "")
+    filmsDBRaw <- readFile "DBFile.txt"
+    let filmsDB = read filmsDBRaw :: [Film]
+    putStrLn (filmsAsString filmsDB)
 
-
-
+-- Load films txt
+-- Display all films (ii)
+-- User name
+-- Menu
+-- ~ User chosen things ~
+-- Exit - save to txt
 
 
 
