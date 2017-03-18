@@ -121,9 +121,13 @@ demo 7 = putStrLn (fansOfDirAsStr (fansOfADirector "James Cameron" testDatabase)
 main :: IO ()
 main = do
     putStrLn ("Main loaded..." ++ "\n" ++ "")
+	-- Load and print Database
     filmsDBRaw <- readFile "DBFile.txt"
     let filmsDB = read filmsDBRaw :: [Film]
     putStrLn (filmsAsString filmsDB)
+	
+	
+	
 
 -- Load films txt
 -- Display all films (ii)
