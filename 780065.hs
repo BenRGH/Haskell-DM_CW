@@ -51,13 +51,13 @@ releasedAfter year filmsDB = filmsAsString [(Film t d release f) | (Film t d rel
 -- iv - All films a user is a fan of
 filmsOfAFan :: Fan -> [Film] -> String
 -- This shows us all the films that a specific person is a fan of
-filmsOfAFan fan filmsDB = filmsAsString (filter (\(Film t d r fans) -> fan `elem` fans) filmsDB)
+filmsOfAFan fan filmsDB = filmsAsString (filter (\(Film _ _ _ fans) -> fan `elem` fans) filmsDB)
 
 -- v - All the fans of a specified film
 fansOfAFilm :: [Film] -> [Film] -> String
 -- This takes a film and returns the list of fans
-fansOfAFilm ((Film t d r []):db) _ = "" -- Stops the recursive loop
-fansOfAFilm ((Film t d r (fan:rest)):db) films = fan ++ "\n" ++ fansOfAFilm [(Film t d r rest)] films
+fansOfAFilm ((Film _ _ _ []):_) _ = "" -- Stops the recursive loop
+fansOfAFilm ((Film t d r (fan:rest)):_) films = fan ++ "\n" ++ fansOfAFilm [(Film t d r rest)] films
 
 -- vi - Add fan to a film
 addFan :: String -> String -> [Film] -> [Film]
@@ -76,7 +76,7 @@ fansOfADirector :: String -> [Film] -> [Fan]
 -- Finds all the fans of a director from their films
 -- Arguments: Director's name, film database, list of fans
 fansOfADirector _ [] = []
-fansOfADirector name ((Film t director r fans):db)
+fansOfADirector name ((Film _ director _ fans):db)
   | director == name     = nub (fans ++ (fansOfADirector name db))
   -- Nub once again stops duplicates here
   | otherwise            = fansOfADirector name db
@@ -124,6 +124,9 @@ main = putStrLn ("Main locked and ready" ++ "\n")
 
 
 
+
+
+
 -- "Helper" Functions
 
 -- A better formatted list of all the films
@@ -133,7 +136,7 @@ getFilms films = putStrLn (filmsAsString films)
 
 -- Search for one or more films by title
 searchByTitle :: String -> [Film] -> [Film]
-searchByTitle chosenTitle films = filter (\(Film title director release fans) -> title == chosenTitle) films
+searchByTitle chosenTitle films = filter (\(Film title _ _ _) -> title == chosenTitle) films
 
 -- Format fans of a director
 fansOfDirAsStr:: [Fan] -> String
