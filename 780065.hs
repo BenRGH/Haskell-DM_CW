@@ -4,7 +4,7 @@
 -- Imports
 import Data.List
 import Data.Char
-import Control.Monad
+import Control.Monad()
 
 -- Types
 type Title = String
@@ -161,16 +161,58 @@ menu name filmsDB = do
                     putStrLn (releasedAfter yearInt filmsDB)
         "4" -> do
             putStrLn (filmsOfAFan name filmsDB)
+            menu name filmsDB
         "5" -> do
-            return expression
+            putStrLn "Please enter the name of a film: "
+            title <- getLine
+            if title == "" || title `notElem` (allTitles filmsDB)
+                then do
+                    putStrLn "Please enter a valid name"
+                    menu name filmsDB
+                else do
+                    putStrLn (fansOfAFilm (searchByTitle title filmsDB) filmsDB)
         "6" -> do
-            return expression
+            putStrLn "Please enter the name of a film: "
+            title <- getLine
+            if title == "" || title `notElem` (allTitles filmsDB)
+                then do
+                    putStrLn "Please enter a valid name"
+                    menu name filmsDB
+                else do
+                    putStrLn "Added to database."
+                    menu name (addFan name title filmsDB)
         "7" -> do
-            return expression
+            putStrLn "Please enter the name of a director: "
+            director <- getLine
+            if director == "" || containsNumber director || director `notElem` (allDirectors filmsDB)
+                then do
+                    putStrLn "Please enter a valid name."
+                    menu name filmsDB
+                else do
+                    putStrLn (fansOfDirAsStr $ fansOfADirector director filmsDB)
         "8" -> do
-            return expression
+            putStrLn (directorsFanCnt (nameValidation name) (allDirectors filmsDB) filmsDB)
         "9" -> do
-            return expression
+            putStrLn "Please enter the number of the demo you would like to run:\n\
+            \1.add a new film to the database \n\
+            \2.give all films in the database\n\
+            \3.give all the  films that  were  released  after  a particular year  (not  including  the  given year)\n\
+            \4.give all films that a particular user is a fan of \n\
+            \5.give all the fans of a particular film\n\
+            \6.allow a user to say they are a fan of a particular film\n\
+            \7.give all the fans (without duplicates) of a particular director (i.e.  those users who are fans of at least one of the director’s films)\n\
+            \8.list all directors (without duplicates), giving for each one the number of his/her films a particular user is a fan of\n"
+
+            demoNo <- getLine
+            let demoNoValue = read demoNo :: Int
+
+            if containsLetter demoNo || demoNoValue > 8 || demoNo == "" || demoNo == "0"
+                then do
+                    putStrLn "That's not a valid demo."
+                    menu name filmsDB
+                else do
+                    demo demoNoValue
+                    menu name filmsDB
         "10" -> do
             writeFile "DBFile.txt" (show filmsDB)
         _ -> do
@@ -178,10 +220,7 @@ menu name filmsDB = do
              menu name filmsDB
 
 
--- Exit - save to txt
-
-
-
+-- Adds a film from IO with validation
 addFilmIO :: String -> [Film] -> IO ()
 addFilmIO name filmsDB = do
     putStrLn "-  Adding a film  -"
@@ -201,7 +240,7 @@ addFilmIO name filmsDB = do
         else do
             putStrLn "Release date: "
             release <- getLine
-            if release == "" ||  containsLetter release || not (isLength release 4)
+            if release == "" || containsLetter release || not (isLength release 4)
                 then do
                     putStrLn "Please enter a valid year."
                     addFilmIO name filmsDB
@@ -209,6 +248,28 @@ addFilmIO name filmsDB = do
                 fans <- (addFans True [])
                 menu name (addFilm (Film title director (read release :: Int) fans) filmsDB)
 
+
+-- Create a fans list from user input
+addFans :: Bool -> [Fan] -> IO([Fan])
+addFans more fans
+    | more = do
+        putStrLn "Add a fan? (y/n):"
+        moreInput <- getLine
+        if moreInput == "y"
+            then do
+                putStrLn "Enter fan's name: "
+                name <- getLine
+                if name == ""
+                    then do
+                        putStrLn "Please enter a valid name"
+                        addFans True fans
+                    else do
+                        addFans True (fans ++ [nameValidation name])
+            else do
+                putStrLn "Recieving that as a no."
+                addFans False fans
+
+    | otherwise = return fans
 
 
 
@@ -222,7 +283,7 @@ getFilms films = putStrLn (filmsAsString films)
 
 -- Search for one or more films by title
 searchByTitle :: String -> [Film] -> [Film]
-searchByTitle chosenTitle films = filter (\(Film title _ _ _) -> title == chosenTitle) films
+searchByTitle chosenTitle films = filter (\(Film title _ _ _) -> (map toLower title) == (map toLower chosenTitle)) films
 
 -- Format fans of a director
 fansOfDirAsStr:: [Fan] -> String
@@ -259,25 +320,3 @@ isLength (x:xs) limit =
             False
         else do
             True
-
--- Create a fans list from user input
-addFans :: Bool -> [Fan] -> IO([Fan])
-addFans more fans
-    | more = do
-        putStrLn "Add a fan? (y/n):"
-        moreInput <- getLine
-        if moreInput == "y"
-            then do
-                putStrLn "Enter fan's name: "
-                name <- getLine
-                if name == ""
-                    then do
-                        putStrLn "Please enter a valid name"
-                        addFans True fans
-                    else do
-                        addFans True (fans ++ [nameValidation name])
-            else do
-                putStrLn "Recieving that as a no."
-                addFans False fans
-
-    | otherwise = return fans
