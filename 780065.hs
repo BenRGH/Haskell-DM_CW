@@ -75,6 +75,7 @@ addFan name chosenFilm ((Film title d r fans):db)
 fansOfADirector :: String -> [Film] -> [Fan]
 -- Finds all the fans of a director from their films
 -- Arguments: Director's name, film database, list of fans
+-- Output: List of Fan
 fansOfADirector _ [] = []
 fansOfADirector name ((Film _ director _ fans):db)
   | director == name     = nub (fans ++ (fansOfADirector name db))
@@ -82,25 +83,17 @@ fansOfADirector name ((Film _ director _ fans):db)
   | otherwise            = fansOfADirector name db
 
 -- viii - List all directors with the number of their films a user is a fan of
-directorsFanCnt :: String -> [Film] -> [Film]
+directorsFanCnt :: String -> [Director] -> [Film] -> String
 {- This function takes the name of a fan and the film database and returns
 a list of all directors with the number of films a specified user is a fan of
 in a pair -}
-directorsFanCnt user filmsDB = filmsDB
+directorsFanCnt _ [] _ = ""
+directorsFanCnt user (dir:rest) filmsDB = "\n" ++ dir ++ ": " ++ (show (length (filter (\(Film _ _ _ fans) -> user `elem` fans) (filter (\(Film _ dirs _ _) -> dir == dirs) filmsDB)))) ++ (directorsFanCnt user rest filmsDB)
 
 
 
 
-
-
-
-
-
-
-
-
-
-
+-- Demos
 
 demo :: Int -> IO ()
 demo 1  = putStrLn (filmsAsString $ addFilm (Film "Alien: Covenant" "Ridley Scott" 2017 []) testDatabase)
@@ -112,7 +105,7 @@ demo 5  = putStrLn (fansOfAFilm (searchByTitle "Jaws" testDatabase) testDatabase
 demo 6  = putStrLn (filmsAsString $ addFan "Liz" "The Fly" testDatabase)
 demo 66 = putStrLn (filmsAsString $ addFan "Liz" "Avatar" testDatabase)
 demo 7 = putStrLn (fansOfDirAsStr (fansOfADirector "James Cameron" testDatabase))
---demo 8  = putStrLn all directors & no. of their films that "Liz" is a fan of
+demo 8  = putStrLn (directorsFanCnt "Liz" (allDirectors testDatabase) testDatabase)
 
 
 
@@ -125,9 +118,9 @@ main = do
     filmsDBRaw <- readFile "DBFile.txt"
     let filmsDB = read filmsDBRaw :: [Film]
     putStrLn (filmsAsString filmsDB)
-	
-	
-	
+
+
+
 
 -- Load films txt
 -- Display all films (ii)
@@ -155,3 +148,8 @@ fansOfDirAsStr:: [Fan] -> String
 -- Used by vii, formats the list of fans to string with newlines
 fansOfDirAsStr [] = [] -- Recursive stop
 fansOfDirAsStr (x:xs) = x ++ "\n" ++ fansOfDirAsStr xs
+
+-- Gets a list of all directors
+allDirectors :: [Film] -> [Director]
+-- Used by viii
+allDirectors filmsDB = nub [dir | (Film _ dir _ _) <- filmsDB]
