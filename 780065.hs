@@ -296,7 +296,7 @@ addFans more fans
             then do
                 putStrLn "Enter fan's name: "
                 name <- getLine
-                if name == "" || (nameValidation name) `elem` fans
+                if name == "" || (nameValidation name) `elem` fans || containsNumber name
                     --Check fan hasn't already been added
                     then do
                         putStrLn "Please enter a valid name"
