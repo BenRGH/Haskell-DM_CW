@@ -13,7 +13,7 @@ type Release = Int
 type Fan = String
 
 
--- Defining the Algebraic type Film with constructor taking all the film properties
+-- Defining the ADT Film with constructor taking all the film properties
 data Film = Film Title Director Release [Fan]
   deriving(Show, Read)
 
@@ -65,9 +65,9 @@ addFan :: String -> String -> [Film] -> [Film]
 -- Arguments: Fan name, name of the Film they're a fan of and the film database
 addFan name chosenFilm [] = [] --Stops recursion
 addFan name chosenFilm ((Film title d r fans):db)
-  | title == chosenFilm   = ((Film title d r (nub(fans ++ [name]))):db)
+  | title == (nameValidation chosenFilm)   = ((Film title d r (nub(fans ++ [name]))):db)
   -- nub prevents duplicates
-  | otherwise             = addFan name chosenFilm (db ++ [(Film title d r fans)])
+  | otherwise             = addFan name (nameValidation chosenFilm) (db ++ [(Film title d r fans)])
  {- In the above line we are adding the film we just checked to the end of the list
  so that we keep the list of films the same-}
 
@@ -78,9 +78,9 @@ fansOfADirector :: String -> [Film] -> [Fan]
 -- Output: List of Fan
 fansOfADirector _ [] = []
 fansOfADirector name ((Film _ director _ fans):db)
-  | director == name     = nub (fans ++ (fansOfADirector name db))
+  | director == (nameValidation name)     = nub (fans ++ (fansOfADirector (nameValidation name) db))
   -- Nub once again stops duplicates here
-  | otherwise            = fansOfADirector name db
+  | otherwise            = fansOfADirector (nameValidation name) db
 
 -- viii - List all directors with the number of their films a user is a fan of
 directorsFanCnt :: String -> [Director] -> [Film] -> String
@@ -116,18 +116,19 @@ main = do
   putStrLn (filmsAsString filmsDB)
 
 -- User name
-  putStrLn "Please input your User Name:\n"
+  putStrLn "Please input your Name:\n"
   name <- getLine
-  if name == ""
+  if name == "" || containsNumber name
       then do
-          putStrLn "Incorrect User Name."
+          putStrLn "Incorrect Name."
           main
-  else do
-      menu (nameValidation name) filmsDB
+      else do
+          menu (nameValidation name) filmsDB
 
 
 menu :: String -> [Film]-> IO ()
 -- The main options menu for the UI
+-- NAME HAS BEEN VALIDATED
 menu name filmsDB = do
     putStr "What would you like to do?\n\
     \1.Add film(s)\n\
@@ -144,12 +145,12 @@ menu name filmsDB = do
 
     choice <- getLine
     case choice of
-        "1" -> do
+        "1" -> do -- Add film(s)
             addFilmIO name filmsDB
-        "2" -> do
+        "2" -> do -- View database
             putStrLn $ filmsAsString filmsDB
             menu name filmsDB
-        "3" -> do
+        "3" -> do -- Find films released after a year
             putStrLn "Please enter a year: "
             year <- getLine
             if containsLetter year || not (isLength year 4)
@@ -159,40 +160,40 @@ menu name filmsDB = do
                 else do
                     let yearInt = read year :: Int
                     putStrLn (releasedAfter yearInt filmsDB)
-        "4" -> do
+        "4" -> do -- List my favourite films
             putStrLn (filmsOfAFan name filmsDB)
             menu name filmsDB
-        "5" -> do
+        "5" -> do -- List the fans of a film
             putStrLn "Please enter the name of a film: "
             title <- getLine
-            if title == "" || title `notElem` (allTitles filmsDB)
+            if (nameValidation title) `notElem` (allTitles filmsDB)
                 then do
                     putStrLn "Please enter a valid name"
                     menu name filmsDB
                 else do
                     putStrLn (fansOfAFilm (searchByTitle title filmsDB) filmsDB)
-        "6" -> do
+        "6" -> do -- Add a favourite film
             putStrLn "Please enter the name of a film: "
             title <- getLine
-            if title == "" || title `notElem` (allTitles filmsDB)
+            if (nameValidation title) `notElem` (allTitles filmsDB)
                 then do
                     putStrLn "Please enter a valid name"
                     menu name filmsDB
                 else do
-                    putStrLn "Added to database."
-                    menu name (addFan name title filmsDB)
-        "7" -> do
+                    putStrLn "Added to database unless already existing."
+                    menu name (addFan name title filmsDB) -- addFan validates the title
+        "7" -> do -- List fans of a director
             putStrLn "Please enter the name of a director: "
             director <- getLine
-            if director == "" || containsNumber director || director `notElem` (allDirectors filmsDB)
+            if director == "" || containsNumber director || (nameValidation director) `notElem` (allDirectors filmsDB)
                 then do
                     putStrLn "Please enter a valid name."
                     menu name filmsDB
                 else do
                     putStrLn (fansOfDirAsStr $ fansOfADirector director filmsDB)
-        "8" -> do
+        "8" -> do -- List all directors and the number of their films I'm a fan of
             putStrLn (directorsFanCnt (nameValidation name) (allDirectors filmsDB) filmsDB)
-        "9" -> do
+        "9" -> do -- Demos
             putStrLn "Please enter the number of the demo you would like to run:\n\
             \1.add a new film to the database \n\
             \2.give all films in the database\n\
@@ -213,7 +214,7 @@ menu name filmsDB = do
                 else do
                     demo demoNoValue
                     menu name filmsDB
-        "10" -> do
+        "10" -> do -- Exit
             writeFile "DBFile.txt" (show filmsDB)
         _ -> do
              putStrLn "Please enter a valid choice"
@@ -226,27 +227,27 @@ addFilmIO name filmsDB = do
     putStrLn "-  Adding a film  -"
     putStrLn "Title: "
     title <- getLine
-    if (title == "") || (title `elem` (allTitles filmsDB))
+    if (title == "") || ((nameValidation title) `elem` (allTitles filmsDB))
         then do
             putStrLn "Please enter a valid title not already in the database."
             addFilmIO name filmsDB
-    else do
-        putStrLn "Director: "
-        director <- getLine
-        if (director == "") || (containsNumber director)
-            then do
-                putStrLn "Please enter a valid name."
-                addFilmIO name filmsDB
         else do
-            putStrLn "Release date: "
-            release <- getLine
-            if release == "" || containsLetter release || not (isLength release 4)
+            putStrLn "Director: "
+            director <- getLine
+            if (director == "") || (containsNumber director)
                 then do
-                    putStrLn "Please enter a valid year."
+                    putStrLn "Please enter a valid name."
                     addFilmIO name filmsDB
-            else do
-                fans <- (addFans True [])
-                menu name (addFilm (Film title director (read release :: Int) fans) filmsDB)
+                else do
+                    putStrLn "Release date: "
+                    release <- getLine
+                    if release == "" || containsLetter release || not (isLength release 4)
+                        then do
+                            putStrLn "Please enter a valid year."
+                            addFilmIO name filmsDB
+                        else do
+                            fans <- (addFans True (allFans filmsDB))
+                            menu name (addFilm (Film (nameValidation title) (nameValidation director) (read release :: Int) fans) filmsDB)
 
 
 -- Create a fans list from user input
@@ -259,7 +260,7 @@ addFans more fans
             then do
                 putStrLn "Enter fan's name: "
                 name <- getLine
-                if name == ""
+                if name == "" || (nameValidation name) `elem` fans
                     then do
                         putStrLn "Please enter a valid name"
                         addFans True fans
@@ -283,7 +284,7 @@ getFilms films = putStrLn (filmsAsString films)
 
 -- Search for one or more films by title
 searchByTitle :: String -> [Film] -> [Film]
-searchByTitle chosenTitle films = filter (\(Film title _ _ _) -> (map toLower title) == (map toLower chosenTitle)) films
+searchByTitle chosenTitle films = filter (\(Film title _ _ _) -> (nameValidation title) == (nameValidation chosenTitle)) films
 
 -- Format fans of a director
 fansOfDirAsStr:: [Fan] -> String
@@ -296,13 +297,18 @@ allDirectors :: [Film] -> [Director]
 -- Used by viii
 allDirectors filmsDB = nub [dir | (Film _ dir _ _) <- filmsDB]
 
+-- Gets a list of all titles
 allTitles :: [Film] -> [Title]
 allTitles filmsDB = [title | (Film title _ _ _) <- filmsDB]
 
+-- Gets a list of all fans
+allFans :: [Film] -> [Fan]
+allFans [] = []
+allFans ((Film _ _ _ fans):db) = nub (fans ++ (allFans db))
+
 -- Makes the username start with a capital letter (input validation)
 nameValidation :: String -> String
-nameValidation [] = []
-nameValidation (first:rest) = toUpper first : map toLower rest
+nameValidation = concat . map (\(first:rest) -> toUpper first : rest) . groupBy (\a b -> isSpace a == isSpace b)
 
 -- Checks if the input contains a number
 containsNumber :: String -> Bool
