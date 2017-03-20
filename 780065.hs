@@ -5,7 +5,6 @@
 import Data.List
 import Data.Char
 import Control.Monad()
-import System.Exit
 
 -- Types
 type Title = String
@@ -248,6 +247,7 @@ menu name filmsDB = do
             writeFile "DBFile.txt" (show filmsDB)
             --Write to the external database file, done only here
             putStrLn "Exiting"
+            return ()
 
         _ -> do
              putStrLn "Please enter a valid choice"
