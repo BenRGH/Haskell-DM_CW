@@ -1,5 +1,4 @@
 -- MATHFUN
--- UP780065
 
 -- Imports
 import Data.List
